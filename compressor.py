@@ -7,11 +7,25 @@ import functools
 
 class Compressor:
     """ Heuristic text compressor """
-    def __init__(self, path):
-        self.parse_data(path)
+    def __init__(self, path, parsed_input=True):
+        if parsed_input:
+            self.read_parses(path)
+        else:
+            self.parse_data(path)
         self.init_tfidf()
 
+    def read_parses(self, path):
+        """ Read parses from file """
+        files = [f for f in os.listdir(path) if '.conll' in f]
+        self.docs = []
+        for i, filename in enumerate(files):
+            if i % 1000 == 0:
+                print("Reading... %d/%d" % (i,len(files)))
+            parse = open(path+filename).read()
+            self.docs.append(parser.read_conll(parse))
+
     def parse_data(self, path):
+        """ Read text from file and parse """
         buffer = ""
         for i, filename in enumerate(os.listdir(path)):
             if i % 1000 == 0:
