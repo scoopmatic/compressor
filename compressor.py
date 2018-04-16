@@ -77,7 +77,7 @@ class Compressor:
             return functools.reduce(lambda a,b: a+b, chains)
 
 
-    def compress(self, tokens, rate=0.5):
+    def compress(self, tokens, rate=0.5, return_lemma=False):
         """ Compress sentence by specified rate """
         tree = collections.defaultdict(lambda: [])
         token_dict = {}
@@ -131,7 +131,11 @@ class Compressor:
                 output.add(cc['idx'])"""
         #
         #return str(round(float(len(output))/len(token_dict)*100))+'%: '+' '.join([token_dict[idx]['token'] for idx in sorted(output)])
-        return ' '.join([token_dict[idx]['token'] for idx in sorted(output)])
+        #return ' '.join([token_dict[idx]['token'] for idx in sorted(output)])
+        if return_lemma:
+            return [token_dict[idx]['lemma'] for idx in sorted(output)]
+        else:
+            return [token_dict[idx]['token'] for idx in sorted(output)]
 
 
     def compress_doc(self, doc_tokens, rate=0.5):
@@ -168,7 +172,7 @@ class Compressor:
         return str(round(float(sum(map(len, output)))/sum(map(len,token_dict.values()))*100))+'%:\n '+outstr
 
 
-    def compress_all_sents(self, rate=0.5, output=None):
+    def compress_all_sents(self, rate=0.5, output=None, min_diff=0, return_lemma=False):
         print("Compressing sentences...")
         if output:
             outf = open(output, "w")
@@ -177,12 +181,16 @@ class Compressor:
             for sent_i, sent in enumerate(doc):
                 tokens = self.compute_tfidf(sent, doc_i)
                 self.docs[doc_i][sent_i] = tokens
-                result = self.compress(tokens, rate)
+                result = self.compress(tokens, rate, return_lemma=return_lemma)
+                if (len(tokens)-len(result)) < min_diff:
+                    # Compression failed to compress sentence by at least min_diff tokens
+                    continue
+                result_str = ' '.join(result)
                 if output:
-                    outf.write(result+'\n')
+                    outf.write(result_str+'\n')
                     outf2.write(' '.join([t['token'] for t in tokens])+'\n')
                 else:
-                    print(result)
+                    print(result_str)
             if not output:
                 print
         if output:
